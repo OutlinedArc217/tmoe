@@ -16,6 +16,7 @@ frequently_asked_questions() {
         "9" "mlocate数据库初始化失败" \
         "10" "TTY下中文字体乱码" \
         "11" "Linux与win10双系统时间不一致" \
+        "12" "Chroot容器启用Systemd" \
         "0" "Back to the main menu 返回主菜单" \
         3>&1 1>&2 2>&3)
     ##############################
@@ -74,7 +75,22 @@ frequently_asked_questions() {
     11)
         fix_linux_utc_timezone
         ;;
-    esac
+    12)   
+        printf "%s\n" "在执行之前，请确保系统已安装systemd。${YELLOW}请注意,此操作可能会导致设备变砖，请慎重执行，回车以继续${RESET}"
+        do_you_want_to_continue
+        if [ "$(stat -c %d:%i /)" != "$(stat -c %d:%i /proc/1/root/.)" ]; then
+  echo "抱歉，您的容器不是chroot容器"
+else
+  if [ ! -d "/proc/$$/ns/pid" ] || [ ! -d "/proc/$$/ns/cgroup" ]; then
+    echo "抱歉，您的系统不支持开启Systemd"
+  else
+    unshare --fork -p /usr/lib/systemd/systemd & 
+    nsenter -t $(pidof systemd) -p
+  fi
+fi
+      ;; 
+   esac
+        
     ##################
     press_enter_to_return
     frequently_asked_questions
